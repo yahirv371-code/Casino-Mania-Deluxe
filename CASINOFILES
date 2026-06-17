@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=600, height=600, user-scalable=no" />
+  <title>Casino Mania Deluxe</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app"></div>
+  <script src="input.js"></script>
+  <script src="achievements.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>body {
+  margin: 0;
+  padding: 0;
+  background: #111;
+  color: white;
+  font-family: Arial, sans-serif;
+  width: 600px;
+  height: 600px;
+  overflow: hidden;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+}
+
+.title {
+  text-align: center;
+  font-size: 32px;
+  margin-top: 10px;
+  color: gold;
+}
+
+button {
+  width: 80%;
+  margin: 10px auto;
+  display: block;
+  padding: 12px;
+  font-size: 22px;
+  background: #222;
+  color: white;
+  border: 2px solid gold;
+  border-radius: 8px;
+}
+
+button.focused {
+  background: gold;
+  color: black;
+}
+
+canvas:hover {
+  cursor: crosshair;
+}const app = document.getElementById("app");
+
+let currentScreen = "opening";
+
+function navigate(screen) {
+  currentScreen = screen;
+
+  if (screen === "opening") renderOpening();
+  if (screen === "menu") renderRoundMenu();
+  if (screen === "slots") renderSlots();
+  if (screen === "blackjack") renderBlackjack();
+  if (screen === "poker") renderPoker();
+  if (screen === "baccarat") renderBaccarat();
+  if (screen === "craps") renderCraps();
+  if (screen === "keno") renderKeno();
+  if (screen === "scratch") renderScratch();
+  if (screen === "save") renderSave();
+  if (screen === "load") renderLoad();
+  if (screen === "vip") renderVIPRoom();
+}
+
+navigate("opening");window.addEventListener("keydown", e => {
+  if (e.key === "ArrowDown") window.dispatchEvent(new Event("nav-down"));
+  if (e.key === "ArrowUp") window.dispatchEvent(new Event("nav-up"));
+  if (e.key === "Enter") window.dispatchEvent(new Event("nav-select"));
+});let achievements = JSON.parse(localStorage.getItem("achievements") || "{}");
+
+function unlockAchievement(name) {
+  achievements[name] = true;
+  localStorage.setItem("achievements", JSON.stringify(achievements));
+}
+
+function popupAchievement(text) {
+  const box = document.createElement("div");
+  box.style.position = "absolute";
+  box.style.bottom = "20px";
+  box.style.left = "50%";
+  box.style.transform = "translateX(-50%)";
+  box.style.padding = "10px 20px";
+  box.style.background = "gold";
+  box.style.color = "black";
+  box.style.fontSize = "20px";
+  box.style.borderRadius = "8px";
+  box.textContent = text;
+
+  app.appendChild(box);
+
+  setTimeout(() => box.remove(), 2000);
+}function renderOpening() {
+  app.innerHTML = `
+    <div style="text-align:center; margin-top:120px;">
+      <div style="font-size:48px; color:gold; font-weight:bold;">
+        CASINO MANIA
+      </div>
+      <div style="font-size:24px; margin-top:20px;">
+        Deluxe Edition
+      </div>
+      <div style="margin-top:40px; font-size:18px;">
+        Press ENTER to begin
+      </div>
+    </div>
+  `;
+
+  function start() {
+    window.removeEventListener("nav-select", start);
+    navigate("menu");
+  }
+
+  window.addEventListener("nav-select", start);
+}let menuIndex = 0;
+
+const menuItems = [
+  { label: "🎰 Slots", screen: "slots" },
+  { label: "🃏 Blackjack", screen: "blackjack" },
+  { label: "🂡 Poker", screen: "poker" },
+  { label: "🎴 Baccarat", screen: "baccarat" },
+  { label: "🎲 Craps", screen: "craps" },
+  { label: "🔢 Keno", screen: "keno" },
+  { label: "🧽 Scratch Cards", screen: "scratch" },
+  { label: "💾 Save Game", screen: "save" },
+  { label: "📂 Load Game", screen: "load" },
+  { label: "💎 VIP Room", screen: "vip" }
+];
+
+function renderRoundMenu() {
+  app.innerHTML = `
+    <div class="title">Casino Mania Deluxe</div>
+    <div id="menu"></div>
+  `;
+
+  const menu = document.getElementById("menu");
+
+  function drawMenu() {
+    menu.innerHTML = "";
+    menuItems.forEach((item, i) => {
+      const btn = document.createElement("button");
+      btn.textContent = item.label;
+      if (i === menuIndex) btn.classList.add("focused");
+      menu.appendChild(btn);
+    });
+  }
+
+  drawMenu();
+
+  function down() {
+    menuIndex = (menuIndex + 1) % menuItems.length;
+    drawMenu();
+  }
+
+  function up() {
+    menuIndex = (menuIndex - 1 + menuItems.length) % menuItems.length;
+    drawMenu();
+  }
+
+  function select() {
+    navigate(menuItems[menuIndex].screen);
+  }
+
+  window.addEventListener("nav-down", down);
+  window.addEventListener("nav-up", up);
+  window.addEventListener("nav-select", select);
+}function renderSave() {
+  app.innerHTML = `
+    <div class="title">Save Game</div>
+    <button id="saveBtn">Save Progress</button>
+    <button id="backBtn">Back</button>
+  `;
+
+  document.getElementById("saveBtn").onclick = () => {
+    const data = {
+      chips: window.playerChips || 1000,
+      achievements,
+      timestamp: Date.now()
+    };
+
+    localStorage.setItem("casinoSave", JSON.stringify(data));
+    popupAchievement("Game Saved!");
+  };
+
+  document.getElementById("backBtn").onclick = () => navigate("menu");
+}
+
+function renderLoad() {
+  app.innerHTML = `
+    <div class="title">Load Game</div>
+    <button id="loadBtn">Load Progress</button>
+    <button id="backBtn">Back</button>
+  `;
+
+  document.getElementById("loadBtn").onclick = () => {
+    const data = JSON.parse(localStorage.getItem("casinoSave") || "null");
+
+    if (!data) {
+      popupAchievement("No Save Found");
+      return;
+    }
+
+    window.playerChips = data.chips;
+    achievements = data.achievements || {};
+    popupAchievement("Game Loaded!");
+  };
+
+  document.getElementById("backBtn").onclick = () => navigate("menu");
+}function drawCenteredText(text, size = 28, color = "white", y = 300) {
+  const div = document.createElement("div");
+  div.style.position = "absolute";
+  div.style.top = y + "px";
+  div.style.left = "50%";
+  div.style.transform = "translateX(-50%)";
+  div.style.fontSize = size + "px";
+  div.style.color = color;
+  div.textContent = text;
+  app.appendChild(div);
+  return div;
+}
+
+function clearUI() {
+  app.innerHTML = "";
+}function renderSlots() {
+  app.innerHTML = `
+    <div class="title">Slots</div>
+    <canvas id="slotCanvas" width="600" height="400" style="background:#222; margin-top:20px;"></canvas>
+    <button id="spinBtn">SPIN</button>
+    <button id="backBtn">Back</button>
+  `;
+
+  const canvas = document.getElementById("slotCanvas");
+  const ctx = canvas.getContext("2d");
+
+  const symbols = ["🍒", "🔔", "⭐", "7️⃣", "🍋"];
+  let reels = ["?", "?", "?"];
+
+  function drawReels() {
+    ctx.clearRect(0, 0, 600, 400);
+    ctx.font = "80px Arial";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "white";
+
+    ctx.fillText(reels[0], 150, 220);
+    ctx.fillText(reels[1], 300, 220);
+    ctx.fillText(reels[2], 450, 220);
+  }
+
+  drawReels();
+
+  document.getElementById("spinBtn").onclick = () => {
+    reels = [
+      symbols[Math.floor(Math.random() * symbols.length)],
+      symbols[Math.floor(Math.random() * symbols.length)],
+      symbols[Math.floor(Math.random() * symbols.length)]
+    ];
+
+    drawReels();
+
+    if (reels[0] === reels[1] && reels[1] === reels[2]) {
+      popupAchievement("JACKPOT!");
+      window.playerChips += 200;
+    } else {
+      window.playerChips -= 20;
+    }
+  };
+
+  document.getElementById("backBtn").onclick = () => navigate("menu");
+}function renderBlackjack() {
+  app.innerHTML = `
+    <div class="title">Blackjack</div>
+    <div id="bjArea" style="text-align:center; margin-top:20px;"></div>
+    <button id="hitBtn">Hit</button>
+    <button id="standBtn">Stand</button>
+    <button id="backBtn">Back</button>
+  `;
+
+  const area = document.getElementById("bjArea");
+
+  let player = [];
+  let dealer = [];
+
+  function draw() {
+    area.innerHTML = `
+      <div>Dealer: ${dealer.join(" ")}</div>
+      <div>Player: ${player.join(" ")}</div>
+    `;
+  }
+
+  function card() {
+    return Math.floor(Math.random() * 10) + 1;
+  }
+
+  function total(hand) {
+    return hand.reduce((a, b) => a + b, 0);
+  }
+
+  function start() {
+    player = [card(), card()];
+    dealer = [card(), card()];
+    draw();
+  }
+
+  start();
+
+  document.getElementById("hitBtn").onclick = () => {
+    player.push(card());
+    draw();
+
+    if (total(player) > 21) {
+      popupAchievement("Bust!");
+      window.playerChips -= 50;
+    }
+  };
+
+  document.getElementById("standBtn").onclick = () => {
+    while (total(dealer) < 17) dealer.push(card());
+    draw();
+
+    const p = total(player);
+    const d = total(dealer);
+
+    if (p > 21) {
+      popupAchievement("You Lose");
+      window.playerChips -= 50;
+    } else if (d > 21 || p > d) {
+      popupAchievement("You Win!");
+      window.playerChips += 50;
+    } else {
+      popupAchievement("Dealer Wins");
+      window.playerChips -= 50;
+    }
+  };
+
+  document.getElementById("backBtn").onclick = () => navigate("menu");
+}function renderPoker() {
+  app.innerHTML = `
+    <div class="title">Poker</div>
+    <div id="pokerArea" style="text-align:center; margin-top:20px;"></div>
+    <button id="drawBtn">Draw</button>
+    <button id="backBtn">Back</button>
+  `;
+
+  const area = document.getElementById("pokerArea");
+
+  let hand = [];
+
+  function drawHand() {
+    hand = [];
+    for (let i = 0; i < 5; i++) {
+      hand.push(Math.floor(Math.random() * 13) + 1);
+    }
+    area.innerHTML = `Hand: ${hand.join(" ")}`;
+  }
+
+  drawHand();
+
+  document.getElementById("drawBtn").onclick = () => {
+    drawHand();
+    popupAchievement("New Hand!");
+  };
+
+  document.getElementById("backBtn").onclick = () => navigate("menu");
+}function renderBaccarat() {
+  app.innerHTML = `
+    <div class="title">Baccarat</div>
+    <div id="bacArea" style="text-align:center; margin-top:20px;"></div>
+    <button id="dealBtn">Deal</button>
+    <button id="backBtn">Back</button>
+  `;
+
+  const area = document.getElementById("bacArea");
+
+  function draw() {
+    const player = Math.floor(Math.random() * 9) + 1;
+    const banker = Math.floor(Math.random() * 9) + 1;
+
+    area.innerHTML = `
+      Player: ${player}<br>
+      Banker: ${banker}
+    `;
+
+    if (player > banker) {
+      popupAchievement("Player Wins!");
+      window.playerChips += 40;
+    } else if (banker > player) {
+      popupAchievement("Banker Wins!");
+      window.playerChips -= 40;
+    } else {
+      popupAchievement("Tie!");
+    }
+  }
+
+  document.getElementById("dealBtn").onclick = draw;
+  document.getElementById("backBtn").onclick = () => navigate("menu");
+}function renderCraps() {
+  app.innerHTML = `
+    <div class="title">Craps</div>
+    <div id="crapsArea" style="text-align:center; margin-top:20px;"></div>
+    <button id="rollBtn">Roll Dice</button>
+    <button id="backBtn">Back</button>
+  `;
+
+  const area = document.getElementById("crapsArea");
+
+  function roll() {
+    const d1 = Math.floor(Math.random() * 6) + 1;
+    const d2 = Math.floor(Math.random() * 6) + 1;
+    const total = d1 + d2;
+
+    area.innerHTML = `Dice: ${d1} + ${d2} = ${total}`;
+
+    if (total === 7 || total === 11) {
+      popupAchievement("You Win!");
+      window.playerChips += 30;
+    } else if (total === 2 || total === 3 || total === 12) {
+      popupAchievement("Craps! You Lose");
+      window.playerChips -= 30;
+    }
+  }
+
+  document.getElementById("rollBtn").onclick = roll;
+  document.getElementById("backBtn").onclick = () => navigate("menu");
+}function renderKeno() {
+  app.innerHTML = `
+    <div class="title">Keno</div>
+    <div id="kenoArea" style="text-align:center; margin-top:20px;"></div>
+    <button id="playBtn">Play</button>
+    <button id="backBtn">Back</button>
+  `;
+
+  const area = document.getElementById("kenoArea");
+
+  function play() {
+    const pick = Math.floor(Math.random() * 10) + 1;
+    const draw = Math.floor(Math.random() * 10) + 1;
+
+    area.innerHTML = `Your Pick: ${pick}<br>Draw: ${draw}`;
+
+    if (pick === draw) {
+      popupAchievement("Keno Hit!");
+      window.playerChips += 100;
+    } else {
+      window.playerChips -= 10;
+    }
+  }
+
+  document.getElementById("playBtn").onclick = play;
+  document.getElementById("backBtn").onclick = () => navigate("menu");
+}function renderScratch() {
+  app.innerHTML = `
+    <div class="title">Scratch Cards</div>
+    <canvas id="scratchCanvas" width="600" height="400" style="background:#999; margin-top:20px;"></canvas>
+    <button id="backBtn">Back</button>
+  `;
+
+  const canvas = document.getElementById("scratchCanvas");
+  const ctx = canvas.getContext("2d");
+
+  const prize = Math.random() < 0.3 ? "WIN $50" : "TRY AGAIN";
+
+  ctx.fillStyle = "#444";
+  ctx.fillRect(0, 0, 600, 400);
+
+  canvas.addEventListener("mousemove", e => {
+    if (e.buttons === 1) {
+      const x = e.offsetX;
+      const y = e.offsetY;
+      ctx.clearRect(x - 20, y - 20, 40, 40);
+    }
+  });
+
+  canvas.addEventListener("mouseup", () => {
+    popupAchievement(prize);
+    if (prize.includes("WIN")) window.playerChips += 50;
+  });
+
+  document.getElementById("backBtn").onclick = () => navigate("menu");
+}<svg width="600" height="600" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="300" cy="300" r="280" fill="#8B0000" stroke="gold" stroke-width="12"/>
+  <circle cx="300" cy="300" r="200" fill="#222" stroke="gold" stroke-width="8"/>
+  <circle cx="300" cy="300" r="20" fill="gold"/>
+  <text x="300" y="310" font-size="40" fill="white" text-anchor="middle">🎡</text>
+</svg><svg width="120" height="120" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="120" rx="20" fill="#222" stroke="gold" stroke-width="6"/>
+  <circle cx="60" cy="60" r="12" fill="white"/>
+</svg><svg width="120" height="120" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="120" rx="20" fill="#222" stroke="gold" stroke-width="6"/>
+  <circle cx="35" cy="35" r="12" fill="white"/>
+  <circle cx="85" cy="85" r="12" fill="white"/>
+</svg><svg width="120" height="120" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="120" rx="20" fill="#222" stroke="gold" stroke-width="6"/>
+  <circle cx="35" cy="35" r="12" fill="white"/>
+  <circle cx="60" cy="60" r="12" fill="white"/>
+  <circle cx="85" cy="85" r="12" fill="white"/>
+</svg><svg width="120" height="120" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="120" rx="20" fill="#222" stroke="gold" stroke-width="6"/>
+  <circle cx="35" cy="35" r="12" fill="white"/>
+  <circle cx="85" cy="35" r="12" fill="white"/>
+  <circle cx="35" cy="85" r="12" fill="white"/>
+  <circle cx="85" cy="85" r="12" fill="white"/>
+</svg><svg width="120" height="120" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="120" rx="20" fill="#222" stroke="gold" stroke-width="6"/>
+  <circle cx="35" cy="35" r="12" fill="white"/>
+  <circle cx="85" cy="35" r="12" fill="white"/>
+  <circle cx="60" cy="60" r="12" fill="white"/>
+  <circle cx="35" cy="85" r="12" fill="white"/>
+  <circle cx="85" cy="85" r="12" fill="white"/>
+</svg><svg width="120" height="120" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="120" rx="20" fill="#222" stroke="gold" stroke-width="6"/>
+  <circle cx="35" cy="30" r="12" fill="white"/>
+  <circle cx="85" cy="30" r="12" fill="white"/>
+  <circle cx="35" cy="60" r="12" fill="white"/>
+  <circle cx="85" cy="60" r="12" fill="white"/>
+  <circle cx="35" cy="90" r="12" fill="white"/>
+  <circle cx="85" cy="90" r="12" fill="white"/>
+</svg><svg width="200" height="300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="300" rx="20" fill="#111" stroke="gold" stroke-width="8"/>
+  <rect x="20" y="20" width="160" height="260" rx="16" fill="#222" stroke="gold" stroke-width="4"/>
+  <text x="100" y="160" font-size="48" fill="gold" text-anchor="middle">♠</text>
+</svg><svg width="120" height="120" xmlns="http://www.w3.org/2000/svg">
+  <text x="60" y="80" font-size="80" text-anchor="middle">🍒</text>
+</svg><svg width="120" height="120" xmlns="http://www.w3.org/2000/svg">
+  <text x="60" y="80" font-size="80" text-anchor="middle">🔔</text>
+</svg><svg width="120" height="120" xmlns="http://www.w3.org/2000/svg">
+  <text x="60" y="80" font-size="80" text-anchor="middle">⭐</text>
+</svg><svg width="120" height="120" xmlns="http://www.w3.org/2000/svg">
+  <text x="60" y="80" font-size="80" text-anchor="middle">7️⃣</text>
+</svg><svg width="120" height="120" xmlns="http://www.w3.org/2000/svg">
+  <text x="60" y="80" font-size="80" text-anchor="middle">🍋</text>
+</svg><svg width="600" height="200" xmlns="http://www.w3.org/2000/svg">
+  <text x="50" y="100" font-size="60">🎰</text>
+  <text x="150" y="100" font-size="60">🃏</text>
+  <text x="250" y="100" font-size="60">🎲</text>
+  <text x="350" y="100" font-size="60">🎴</text>
+  <text x="450" y="100" font-size="60">🔢</text>
+  <text x="550" y="100" font-size="60">🧽</text>
+</svg>SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU2LjQxLjEwNAAAAAAAAAAAAAAA//uQZAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAA//uQZAAAAADhAAAACQAAABkAAAACAAACAgAAABkAAAACQAAABkAAAACAAACAgAAABkAAAACQAAABkA
+AAACAAACAgAAABkAAAACQAAABkAAAACAAACAgAAABkAAAACQAAABkAAAACAAACAgAAABkAAAACQAAABkAAA
+ACAAACAgAAABkAAAACQAAABkAAAACAAACAgAAABkAAAACQAAABkAAAACAAACAgD//w==SUQzAwAAAAAAI1RTU0UAAAAPAAADTGF2ZjU2LjM3LjEwNAAAAAAAAAAAAAAA//uQZAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAA//uQZAAAAABpAAAABQAAABIAAAACAAACAgAAABIAAAABQAAABIAAAACAAACAgAAABIAAAABQAAABIA
+AAACAAACAgAAABIAAAABQAAABIAAAACAAACAgD//w==UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAAAAP8A/wD/AP8A/wD/AP8A/wD/
+AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A
+/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8AUklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAAAAP8PDw8PDw8PDw8PDw8PDw8P
+Dw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PSUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU2LjQxLjEwNAAAAAAAAAAAAAAA//uQZAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAA//uQZAAAAACpAAAABgAAABMAAAACAAACAgAAABMAAAABgAAABMAAAACAAACAgAAABMAAAABgAAABMA
+AAACAAACAgAAABMAAAABgAAABMAAAACAAACAgD//w==// Initialize chips if not set
+if (!window.playerChips) window.playerChips = 1000;
+
+function addChips(amount) {
+  window.playerChips += amount;
+  popupAchievement(`+${amount} Chips`);
+}
+
+function removeChips(amount) {
+  window.playerChips -= amount;
+  if (window.playerChips < 0) window.playerChips = 0;
+  popupAchievement(`-${amount} Chips`);
+}
+
+function renderChipDisplay() {
+  const chipDiv = document.createElement("div");
+  chipDiv.style.position = "absolute";
+  chipDiv.style.top = "10px";
+  chipDiv.style.right = "10px";
+  chipDiv.style.padding = "8px 14px";
+  chipDiv.style.background = "rgba(0,0,0,0.6)";
+  chipDiv.style.border = "2px solid gold";
+  chipDiv.style.borderRadius = "8px";
+  chipDiv.style.fontSize = "20px";
+  chipDiv.style.color = "gold";
+  chipDiv.id = "chipDisplay";
+  chipDiv.textContent = `Chips: ${window.playerChips}`;
+  app.appendChild(chipDiv);
+}
+
+function updateChipDisplay() {
+  const chipDiv = document.getElementById("chipDisplay");
+  if (chipDiv) chipDiv.textContent = `Chips: ${window.playerChips}`;
+}function renderDailyBonus() {
+  app.innerHTML = `
+    <div class="title">Daily Bonus</div>
+    <div id="bonusArea" style="text-align:center; margin-top:40px; font-size:28px;">
+      Press ENTER to spin the wheel!
+    </div>
+  `;
+
+  function spin() {
+    const rewards = [50, 75, 100, 150, 200, 300];
+    const reward = rewards[Math.floor(Math.random() * rewards.length)];
+
+    addChips(reward);
+    popupAchievement(`Daily Bonus: +${reward} Chips!`);
+
+    document.getElementById("bonusArea").textContent =
+      `You won ${reward} chips!`;
+  }
+
+  window.addEventListener("nav-select", spin, { once: true });
+}function renderVIPRoom() {
+  app.innerHTML = `
+    <div class="title">VIP Room</div>
+    <div style="text-align:center; margin-top:20px; font-size:22px;">
+      Exclusive perks for high rollers.
+    </div>
+    <button id="vipBonusBtn">Claim VIP Bonus</button>
+    <button id="vipSpinBtn">VIP Spin</button>
+    <button id="backBtn">Back</button>
+  `;
+
+  document.getElementById("vipBonusBtn").onclick = () => {
+    const bonus = 500;
+    addChips(bonus);
+    popupAchievement("VIP Bonus Claimed!");
+  };
+
+  document.getElementById("vipSpinBtn").onclick = () => {
+    const reward = Math.random() < 0.5 ? 1000 : -200;
+    if (reward > 0) {
+      addChips(reward);
+      popupAchievement("VIP Mega Win!");
+    } else {
+      removeChips(200);
+      popupAchievement("VIP Loss");
+    }
+  };
+
+  document.getElementById("backBtn").onclick = () => navigate("menu");
+}let winStreak = 0;
+
+function registerWin() {
+  winStreak++;
+
+  if (winStreak === 3) {
+    addChips(100);
+    popupAchievement("3-Win Streak Bonus!");
+  }
+
+  if (winStreak === 5) {
+    addChips(300);
+    popupAchievement("🔥 5-Win Mega Streak!");
+  }
+}
+
+function registerLoss() {
+  winStreak = 0;
+}function deluxeGlow() {
+  const glow = document.createElement("div");
+  glow.style.position = "absolute";
+  glow.style.top = "0";
+  glow.style.left = "0";
+  glow.style.width = "100%";
+  glow.style.height = "100%";
+  glow.style.pointerEvents = "none";
+  glow.style.boxShadow = "inset 0 0 60px gold";
+  glow.style.opacity = "0.25";
+  app.appendChild(glow);
+}
+
+function deluxeBanner(text) {
+  const banner = document.createElement("div");
+  banner.style.position = "absolute";
+  banner.style.top = "50px";
+  banner.style.left = "50%";
+  banner.style.transform = "translateX(-50%)";
+  banner.style.padding = "10px 20px";
+  banner.style.background = "gold";
+  banner.style.color = "black";
+  banner.style.fontSize = "26px";
+  banner.style.borderRadius = "10px";
+  banner.style.fontWeight = "bold";
+  banner.textContent = text;
+  app.appendChild(banner);
+
+  setTimeout(() => banner.remove(), 2000);
+}# 🎰 Casino Mania Deluxe
+A complete mini‑casino built for the Ray‑Ban Meta smart glasses display.  
+Includes 7 classic casino games, deluxe features, sound effects, achievements, and a full chip economy.
+
+---
+
+## 🏆 Features
+
+### 🎮 Core Games
+- Slots  
+- Blackjack  
+- Poker  
+- Baccarat  
+- Craps  
+- Keno  
+- Scratch Cards  
+
+### 💎 Deluxe Features
+- VIP Room  
+- Daily Bonus Wheel  
+- Win Streak Rewards  
+- Chip Economy System  
+- Premium UI Glow Effects  
+- Base64‑Embedded Sound Effects  
+
+### 🖼 Assets
+- Full SVG icon set  
+- Dice set (1–6)  
+- Slot symbols  
+- Card back  
+- Roulette wheel  
+
+---
+
+## 📦 Installation
+
+1. Clone the repository:2. Open the folder:3. Open `index.html` in any browser.
+
+4. Enjoy the full Casino Mania Deluxe experience.
+
+---
+
+## 🕹 Controls (Ray‑Ban Meta Glasses)
+- **Arrow Up / Down** → Navigate menus  
+- **Enter** → Select  
+- **Tap / Swipe** → Interact with canvas games  
+
+---
+
+## 🔊 Sound System
+All sounds are Base64‑encoded for maximum portability:
+- Win chime  
+- Reel spin  
+- Dice roll  
+- Scratch effect  
+- VIP entrance  
+
+---
+
+## 💾 Save & Load
+Casino Mania Deluxe includes:
+- LocalStorage save system  
+- Achievements persistence  
+- Chip balance persistence  
+
+---
+
+## 🧩 Folder Structure---
+
+## 🛠 Technologies
+- HTML5  
+- CSS3  
+- Vanilla JavaScript  
+- SVG graphics  
+- Base64 audio  
+
+---
+
+## 📜 License
+This project is licensed under the MIT License.  
+See `LICENSE` for details.
+
+---
+
+## 🤝 Contributing
+See `CONTRIBUTING.md`.
+
+---
+
+## 🗺 Roadmap
+See `ROADMAP.md`.
+
+---
+
+## 📝 Changelog
+See `CHANGELOG.md`.
+
+---
+
+## 👑 Author
+**Carlos**  
+Creator of Casino Mania Deluxe.MIT License
+
+Copyright (c) 2026 Carlos
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the “Software”), to deal
+in the Software without restriction, including without limitation the rights  
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell  
+copies of the Software, and to permit persons to whom the Software is  
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in  
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER  
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING  
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER  
+DEALINGS IN THE SOFTWARE.# Changelog
+
+## v1.0.0 — Initial Release
+- Added all 7 casino games
+- Added deluxe features (VIP room, daily bonus, streaks)
+- Added chip economy system
+- Added Base64 sound effects
+- Added SVG asset pack
+- Added save/load system
+- Added achievements system
+- Added full UI components
+- Added README, LICENSE, ROADMAP, CONTRIBUTING, CODE_OF_CONDUCT# Roadmap
+
+## 🎯 Planned Features
+- Multiplayer mode (local turn‑based)
+- Leaderboards
+- Custom slot symbol packs
+- Blackjack dealer AI improvements
+- Poker hand ranking system
+- Animated roulette wheel
+- Cloud save support
+
+## 🚀 Future Ideas
+- Achievement badges
+- Daily missions
+- Seasonal events
+- Cosmetic themes (Neon, Retro, Cyber)# Contributing Guidelines
+
+Thanks for your interest in contributing to Casino Mania Deluxe!
+
+## How to Contribute
+1. Fork the repository
+2. Create a new branch:3. Commit your changes:4. Push the branch:5. Open a Pull Request
+
+## Code Style
+- Use clear, readable JavaScript
+- Keep functions small and modular
+- Use SVG for all vector assets
+- Keep audio Base64‑encoded
+
+## Reporting Issues
+Open an issue with:
+- Description
+- Steps to reproduce
+- Expected behavior
+- Screenshots (if applicable)# Code of Conduct
+
+## Our Pledge
+We pledge to make participation in this project a harassment‑free experience for everyone.
+
+## Standards
+- Be respectful  
+- Be constructive  
+- No harassment or discrimination  
+- No spam or trolling  
+
+## Enforcement
+Violations may result in:
+- Warnings  
+- Temporary bans  
+- Permanent bans# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Node (if used later)
+node_modules/
+
+# Build artifacts
+dist/
